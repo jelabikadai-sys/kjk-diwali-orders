@@ -1,1 +1,1427 @@
-// Example User Database Structure const systemUsers = [ { userId: "admin01", name: "Navaneetha Krishnan (Admin)", role: "Admin", outlet: "All", // Can view all outlets and total sales canViewTotals: true }, { userId: "kodam_staff1", name: "Kodambakkam Counter 1", role: "Staff", outlet: "Kodambakkam", // Locked only to Kodambakkam canViewTotals: false // Financial totals are hidden }, { userId: "nung_staff1", name: "Nungambakkam Counter 1", role: "Staff", outlet: "Mahalingapuram", // Locked only to Nungambakkam/Mahalingapuram canViewTotals: false // Financial totals are hidden } ];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krishnaa Jelabi Kadai - Diwali Order Taking System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            maroon: '#6b0f1a',
+                            darkmaroon: '#4a0810',
+                            gold: '#d4af37',
+                            lightgold: '#f9f3dd',
+                            amber: '#b45309',
+                            cream: '#fdfbf7'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Cinzel', 'serif'],
+                        body: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .festive-border {
+            border-image: linear-gradient(to right, #d4af37, #6b0f1a, #d4af37) 1;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+            .print-card { border: none !important; shadow: none !important; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 font-body text-slate-800 min-h-screen flex flex-col">
+
+    <!-- ROLE SWITCHER BANNER (SIMULATOR BAR) -->
+    <header class="no-print bg-gradient-to-r from-brand-darkmaroon via-brand-maroon to-slate-900 text-white shadow-md border-b-2 border-brand-gold sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <span class="bg-brand-gold text-brand-darkmaroon font-bold text-xs px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-user-shield">font-awesome</i> Role Simulator
+                </span>
+                <span class="text-sm font-medium text-amber-200 hidden sm:inline">Select Active Login View:</span>
+            </div>
+
+            <!-- Role Selector Buttons -->
+            <div class="flex items-center gap-2 bg-black/30 p-1 rounded-lg border border-brand-gold/30">
+                <button onclick="switchRole('admin')" id="role-btn-admin" class="role-btn text-xs sm:text-sm px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown text-brand-gold"></i> Admin (Central Office)
+                </button>
+                <button onclick="switchRole('kodambakkam')" id="role-btn-kodambakkam" class="role-btn text-xs sm:text-sm px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-store text-emerald-400"></i> Kodambakkam Outlet
+                </button>
+                <button onclick="switchRole('mahalingapuram')" id="role-btn-mahalingapuram" class="role-btn text-xs sm:text-sm px-3 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-store text-sky-400"></i> Mahalingapuram Outlet
+                </button>
+            </div>
+
+            <!-- Active Permissions Indicator -->
+            <div class="text-xs text-slate-300 flex items-center gap-2">
+                <span id="role-badge" class="px-2 py-0.5 rounded font-mono font-bold"></span>
+                <span id="financial-access-tag" class="hidden sm:inline-block"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- BRANDING HEADER -->
+    <div class="no-print bg-gradient-to-b from-brand-maroon to-brand-darkmaroon text-white border-b-4 border-brand-gold shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="w-14 h-14 rounded-full bg-brand-gold flex items-center justify-center text-brand-darkmaroon font-heading text-2xl font-bold border-2 border-amber-100 shadow-md">
+                    KJK
+                </div>
+                <div>
+                    <h1 class="font-heading text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-brand-lightgold">
+                        KRISHNAA JELABI KADAI
+                    </h1>
+                    <p class="text-xs sm:text-sm text-amber-200 tracking-wider">A Legacy of Taste & Trust | Since 1985 &bull; Diwali Order Taking Portal</p>
+                </div>
+            </div>
+
+            <!-- Quick Navigation Controls -->
+            <div class="flex items-center gap-2">
+                <button onclick="showSection('dashboard')" id="nav-btn-dashboard" class="nav-tab px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white">
+                    <i class="fa-solid fa-chart-line"></i> Orders Dashboard
+                </button>
+                <button onclick="showSection('new-order')" id="nav-btn-new-order" class="nav-tab px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 bg-brand-gold text-brand-darkmaroon font-bold hover:bg-yellow-400 shadow">
+                    <i class="fa-solid fa-plus-circle"></i> New Customer Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- SECTION 1: DASHBOARD & ANALYTICS -->
+        <section id="section-dashboard" class="space-y-6">
+            
+            <!-- ADMIN ANALYTICS CARDS (HIDDEN FOR OUTLET STAFF) -->
+            <div id="admin-analytics-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-brand-maroon">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Sales (All Outlets)</p>
+                            <h3 id="stat-total-sales" class="text-2xl font-extrabold text-slate-800 mt-1">₹0.00</h3>
+                        </div>
+                        <div class="p-3 bg-red-50 text-brand-maroon rounded-lg">
+                            <i class="fa-solid fa-indian-rupee-sign text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-eye text-emerald-600"></i> Visible to Admin Only</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-emerald-600">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Advances Collected</p>
+                            <h3 id="stat-total-advance" class="text-2xl font-extrabold text-emerald-700 mt-1">₹0.00</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <i class="fa-solid fa-wallet text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Cash & Digital Receipts</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-amber-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Balance Due</p>
+                            <h3 id="stat-total-balance" class="text-2xl font-extrabold text-amber-700 mt-1">₹0.00</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                            <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">To be collected on delivery</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-blue-600">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Orders Count</p>
+                            <h3 id="stat-total-orders" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                            <i class="fa-solid fa-receipt text-xl"></i>
+                        </div>
+                    </div>
+                    <p id="stat-outlet-breakdown-tag" class="text-xs text-slate-500 mt-2">Across Kodambakkam & Mahalingapuram</p>
+                </div>
+            </div>
+
+            <!-- OUTLET NOTICE CARD (WHEN IN OUTLET VIEW) -->
+            <div id="outlet-restricted-banner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-user-lock text-amber-600 text-2xl"></i>
+                        <div>
+                            <h4 class="font-bold text-amber-900 text-sm">Outlet Scope Active: <span id="outlet-banner-name" class="underline"></span></h4>
+                            <p class="text-xs text-amber-700 mt-0.5">Order access is filtered strictly for your outlet. Total sales figures and financial aggregations are restricted per outlet safety policy.</p>
+                        </div>
+                    </div>
+                    <span class="bg-amber-200 text-amber-900 text-xs font-bold px-3 py-1 rounded-full uppercase">Outlet Access Only</span>
+                </div>
+            </div>
+
+            <!-- FILTERS & SEARCH BAR -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3 justify-between items-center">
+                <div class="relative w-full md:w-96">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="search-input" onkeyup="renderOrdersTable()" placeholder="Search Order No, Customer, Phone..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon focus:outline-none">
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                    <!-- Outlet Filter (Disabled for Outlet Staff) -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-semibold text-slate-600">Outlet Filter:</label>
+                        <select id="filter-outlet" onchange="renderOrdersTable()" class="border border-slate-300 rounded-lg text-sm px-3 py-2 bg-slate-50 font-medium focus:ring-2 focus:ring-brand-maroon focus:outline-none">
+                            <option value="ALL">All Outlets</option>
+                            <option value="Kodambakkam">Kodambakkam</option>
+                            <option value="Mahalingapuram">Mahalingapuram</option>
+                            <option value="Office">Office / Central</option>
+                        </select>
+                    </div>
+
+                    <!-- Mode Filter -->
+                    <select id="filter-mode" onchange="renderOrdersTable()" class="border border-slate-300 rounded-lg text-sm px-3 py-2 bg-slate-50 font-medium focus:ring-2 focus:ring-brand-maroon focus:outline-none">
+                        <option value="ALL">All Delivery Modes</option>
+                        <option value="Store Pickup">Store Pickup</option>
+                        <option value="Home Delivery">Home Delivery</option>
+                        <option value="Corporate/Bulk">Corporate / Bulk</option>
+                    </select>
+
+                    <button onclick="resetFilters()" class="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-300 rounded-lg bg-white hover:bg-slate-50">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- ORDERS TABLE CARD -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-brand-maroon"></i> Diwali Customer Orders List
+                    </h3>
+                    <span id="order-count-badge" class="bg-brand-maroon text-white text-xs font-bold px-2.5 py-1 rounded-full">0 Orders</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                                <th class="py-3 px-4">Order Details</th>
+                                <th class="py-3 px-4">Customer Details</th>
+                                <th class="py-3 px-4">Outlet & Mode</th>
+                                <th class="py-3 px-4">Required Date/Time</th>
+                                <th class="py-3 px-4">Items Summary</th>
+                                <th class="py-3 px-4 text-right">Financial Summary</th>
+                                <th class="py-3 px-4 text-center">POS Status</th>
+                                <th class="py-3 px-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody" class="divide-y divide-slate-200 text-sm">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: NEW ORDER TAKING FORM (EXACT MATCH TO KRISHNAA JELABI KADAI ORDER FORM) -->
+        <section id="section-new-order" class="hidden space-y-6">
+            
+            <form id="order-form" onsubmit="handleFormSubmit(event)" class="bg-white rounded-xl shadow-md border border-slate-300 overflow-hidden">
+                
+                <!-- FORM HEADER -->
+                <div class="bg-gradient-to-r from-brand-maroon to-brand-darkmaroon text-white p-6 border-b-4 border-brand-gold flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="bg-brand-gold text-brand-darkmaroon font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                            Customer Order Booking Form
+                        </span>
+                        <h2 class="font-heading text-2xl font-bold mt-2 text-brand-lightgold">Diwali Festival Order Entry</h2>
+                        <p class="text-xs text-amber-200">Fill in details matching official order slip specification.</p>
+                    </div>
+
+                    <div class="bg-white/10 p-3 rounded-lg border border-white/20 flex flex-wrap gap-4 text-xs">
+                        <div>
+                            <label class="block text-amber-200 font-semibold mb-1">Order No (Auto):</label>
+                            <input type="text" id="form-order-no" readonly class="bg-black/30 font-mono font-bold text-brand-gold px-2.5 py-1 rounded border border-brand-gold/40 w-36">
+                        </div>
+                        <div>
+                            <label class="block text-amber-200 font-semibold mb-1">Order Date:</label>
+                            <input type="date" id="form-order-date" required class="bg-white text-slate-900 font-medium px-2 py-1 rounded border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block text-amber-200 font-semibold mb-1">Booked By (Staff):</label>
+                            <input type="text" id="form-booked-by" required placeholder="Staff Name" class="bg-white text-slate-900 font-medium px-2 py-1 rounded border border-slate-300 w-28">
+                        </div>
+                        <div>
+                            <label class="block text-amber-200 font-semibold mb-1">Billed Outlet:</label>
+                            <select id="form-outlet" required class="bg-amber-100 text-brand-darkmaroon font-bold px-2 py-1 rounded border border-brand-gold">
+                                <option value="Kodambakkam">Kodambakkam</option>
+                                <option value="Mahalingapuram">Mahalingapuram</option>
+                                <option value="Office">Office / Central</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-8">
+
+                    <!-- SECTION 01: CUSTOMER & BILLING DETAILS -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <h3 class="font-bold text-brand-maroon text-base mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">01</span>
+                            CUSTOMER & BILLING DETAILS
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Customer Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="cust-name" required placeholder="Full Name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Organisation</label>
+                                <input type="text" id="cust-company" placeholder="Optional for corporate orders" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Mobile Number <span class="text-red-500">*</span></label>
+                                <input type="tel" id="cust-mobile" required pattern="[0-9]{10}" placeholder="10 Digit Mobile" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Alternate Contact Number</label>
+                                <input type="tel" id="cust-alt-mobile" placeholder="Secondary Phone" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                                <input type="email" id="cust-email" placeholder="customer@email.com" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">GSTIN (if applicable)</label>
+                                <input type="text" id="cust-gstin" placeholder="33AAAAA0000A1Z5" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon uppercase">
+                            </div>
+
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Billing Address</label>
+                                <textarea id="cust-address" rows="2" placeholder="Full Billing Address" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SECTION 02: DELIVERY / COLLECTION DETAILS -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <h3 class="font-bold text-brand-maroon text-base mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">02</span>
+                            DELIVERY / COLLECTION DETAILS
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Required Date <span class="text-red-500">*</span></label>
+                                <input type="date" id="deliv-date" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Required Time Slot <span class="text-red-500">*</span></label>
+                                <input type="time" id="deliv-time" required class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Delivery / Fulfillment Mode <span class="text-red-500">*</span></label>
+                                <select id="deliv-mode" required onchange="toggleDeliveryAddressField()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-brand-maroon">
+                                    <option value="Store Pickup">☐ Store Pickup</option>
+                                    <option value="Home Delivery">☐ Home Delivery</option>
+                                    <option value="Corporate/Bulk">☐ Corporate / Bulk</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Contact Person on Delivery</label>
+                                <input type="text" id="deliv-contact-person" placeholder="Person receiving order" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Delivery Mobile Number</label>
+                                <input type="tel" id="deliv-mobile" placeholder="Contact number at delivery" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Landmark</label>
+                                <input type="text" id="deliv-landmark" placeholder="Nearby landmark" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Delivery Address / Location</label>
+                                <input type="text" id="deliv-address" placeholder="Destination Address" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-maroon">
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SECTION 03: ITEMS & PACKING DETAILS -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                            <h3 class="font-bold text-brand-maroon text-base flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">03</span>
+                                ITEMS & PACKING DETAILS
+                            </h3>
+                            
+                            <!-- Preset Items Quick Select -->
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="font-semibold text-slate-600">Quick Add Preset:</span>
+                                <select id="preset-item-selector" onchange="addPresetItem(this.value)" class="border border-slate-300 rounded px-2 py-1 bg-white font-medium">
+                                    <option value="">-- Choose Item --</option>
+                                    <option value="Jelabi">Krishnaa Special Hot Jelabi (1 Kg)</option>
+                                    <option value="MixedSweets">Special Mixed Sweets Box (1 Kg)</option>
+                                    <option value="PremiumSavouries">Premium Savouries Combo Pack (500g)</option>
+                                    <option value="AssortedGift">Diwali Grand Assorted Gift Box</option>
+                                    <option value="FilterCoffee">Krishnaa Kaapi Powder (250g)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Items Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse" id="items-table">
+                                <thead>
+                                    <tr class="bg-slate-200 text-slate-700 text-xs font-bold uppercase">
+                                        <th class="p-2 border border-slate-300 w-12 text-center">No</th>
+                                        <th class="p-2 border border-slate-300">Product / Combo / Description</th>
+                                        <th class="p-2 border border-slate-300 w-28">Pack Size</th>
+                                        <th class="p-2 border border-slate-300 w-24">Qty / Boxes</th>
+                                        <th class="p-2 border border-slate-300 w-28">Rate (Rs)</th>
+                                        <th class="p-2 border border-slate-300 w-32 text-right">Amount (Rs)</th>
+                                        <th class="p-2 border border-slate-300">Packing Notes</th>
+                                        <th class="p-2 border border-slate-300 w-12 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items-tbody">
+                                    <!-- Dynamic rows created via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3 flex justify-between items-center">
+                            <button type="button" onclick="addNewItemRow()" class="bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-slate-900 flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Add Item Line
+                            </button>
+                            <span class="text-xs text-slate-500">Auto-calculates item amounts & grand totals</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Specific Packing / Ribbon / Gift Message / Customisation Notes</label>
+                            <input type="text" id="packing-custom-notes" placeholder="e.g., Red Ribbon packing, include Greeting Card with 'Happy Diwali from Sun TV team'" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                        </div>
+                    </div>
+
+
+                    <!-- SECTION 04: BILLING & PAYMENT (RESTRICTED FINANCIAL TOTALS) -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <h3 class="font-bold text-brand-maroon text-base mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">04</span>
+                            BILLING & PAYMENT DETAILS
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Sub Total (Rs)</label>
+                                <input type="number" id="bill-subtotal" readonly class="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-lg font-bold text-slate-800 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Discount (Rs)</label>
+                                <input type="number" id="bill-discount" value="0" min="0" oninput="calculateBillingTotals()" class="w-full p-2.5 border border-slate-300 rounded-lg font-semibold text-slate-800 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Delivery Charges (Rs)</label>
+                                <input type="number" id="bill-delivery" value="0" min="0" oninput="calculateBillingTotals()" class="w-full p-2.5 border border-slate-300 rounded-lg font-semibold text-slate-800 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">GST Tax (5% / 12% - optional)</label>
+                                <input type="number" id="bill-gst" value="0" min="0" oninput="calculateBillingTotals()" class="w-full p-2.5 border border-slate-300 rounded-lg font-semibold text-slate-800 text-sm">
+                            </div>
+
+                            <div class="bg-brand-lightgold p-3 rounded-lg border border-brand-gold/50 md:col-span-2">
+                                <label class="block text-xs font-bold text-brand-darkmaroon mb-1">GRAND TOTAL (Rs)</label>
+                                <input type="number" id="bill-grand-total" readonly class="w-full p-2 bg-white border border-brand-gold rounded-lg font-extrabold text-xl text-brand-maroon">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Advance Received (Rs) <span class="text-red-500">*</span></label>
+                                <input type="number" id="bill-advance" value="0" min="0" oninput="calculateBillingTotals()" required class="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-emerald-700 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">BALANCE DUE (Rs)</label>
+                                <input type="number" id="bill-balance" readonly class="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-lg font-extrabold text-amber-700 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Balance Due Date</label>
+                                <input type="date" id="bill-balance-date" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Mode <span class="text-red-500">*</span></label>
+                                <select id="bill-payment-mode" required class="w-full p-2.5 border border-slate-300 rounded-lg font-semibold text-sm">
+                                    <option value="Cash">Cash</option>
+                                    <option value="UPI">UPI (GPay/PhonePe/Paytm)</option>
+                                    <option value="Card">Card Swipe</option>
+                                    <option value="Bank">Bank Transfer</option>
+                                    <option value="Credit/Due">Credit / Due</option>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Payment / Receipt Ref. No.</label>
+                                <input type="text" id="bill-payment-ref" placeholder="UPI Ref / Bank Transaction ID / Receipt No" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SECTION 05: SYSTEM BILLED DETAILS (PETPOOJA / POS RECONCILIATION) -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <h3 class="font-bold text-brand-maroon text-base mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">05</span>
+                            SYSTEM BILLED DETAILS (PETPOOJA / POS RECONCILIATION)
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">System Bill / Invoice No</label>
+                                <input type="text" id="pos-bill-no" placeholder="e.g. PET-89234" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">System Bill Date & Time</label>
+                                <input type="datetime-local" id="pos-bill-time" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Billed Outlet (POS)</label>
+                                <input type="text" id="pos-billed-outlet" readonly placeholder="Same as Order Outlet" class="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">System Billed Amount (Rs)</label>
+                                <input type="number" id="pos-billed-amount" oninput="calculateReconciliation()" placeholder="0.00" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-semibold">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">System Billed By</label>
+                                <input type="text" id="pos-billed-by" placeholder="POS Operator Name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Difference Amount (Rs)</label>
+                                <input type="number" id="pos-difference" readonly placeholder="0.00" class="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-lg font-bold text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Reconciliation Status</label>
+                                <select id="pos-recon-status" class="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-sm">
+                                    <option value="Matched" class="text-emerald-700">☐ Matched</option>
+                                    <option value="Pending" class="text-amber-700" selected>☐ Pending</option>
+                                    <option value="Mismatch" class="text-red-700">☐ Mismatch</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- SECTION 06: ORDER HANDOVER & CONFIRMATION -->
+                    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                        <h3 class="font-bold text-brand-maroon text-base mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-maroon text-white text-xs flex items-center justify-center">06</span>
+                            ORDER HANDOVER & CONFIRMATION
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Special Instructions / Allergens / Handling Notes</label>
+                                <textarea id="handover-instructions" rows="2" placeholder="e.g. Less ghee in Jelabi, handle box upright during transport..." class="w-full p-2.5 border border-slate-300 rounded-lg text-sm"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Order Taken By <span class="text-red-500">*</span></label>
+                                <input type="text" id="handover-taken-by" required placeholder="Staff Name" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Verified By (Manager)</label>
+                                <input type="text" id="handover-verified-by" placeholder="Outlet Supervisor" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            </div>
+
+                            <div class="flex items-center pt-5">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="handover-confirmed" required class="w-5 h-5 text-brand-maroon rounded focus:ring-brand-maroon">
+                                    <span class="text-xs font-bold text-slate-800">Items, packing, price, delivery schedule & payment terms confirmed with customer</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FORM SUBMISSION BUTTONS -->
+                    <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                        <button type="button" onclick="showSection('dashboard')" class="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-100">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-brand-maroon to-brand-darkmaroon text-brand-gold font-extrabold text-base rounded-lg hover:brightness-110 shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Save & Generate Order Voucher
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </section>
+
+
+        <!-- PRINTABLE ORDER VOUCHER SLIP (A4 FORM FORMAT) -->
+        <div id="print-voucher-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto no-print">
+            <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6">
+                <div class="flex justify-between items-center border-b pb-3 no-print">
+                    <h3 class="font-bold text-lg text-slate-800">Order Voucher & Invoice Slip</h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.print()" class="bg-brand-maroon text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-brand-darkmaroon flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i> Print Slip
+                        </button>
+                        <button onclick="closeVoucherModal()" class="bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg hover:bg-slate-300">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+                <!-- A4 VOUCHER PRINT BODY -->
+                <div id="voucher-content" class="bg-white p-6 border border-slate-300 text-slate-900 font-body text-xs space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="no-print bg-slate-900 text-slate-400 text-xs py-4 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p><strong>Krishnaa Jelabi Kadai</strong> &bull; Kodambakkam | Mahalingapuram/Nungambakkam</p>
+            <p class="text-amber-400">Bulk & Corporate Hotline: 8680820307 / 8608720307</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT SYSTEM LOGIC -->
+    <script>
+        // SYSTEM STATE & CONSTANTS
+        const ROLES = {
+            ADMIN: { id: 'admin', label: 'Admin (Central Office)', outlet: null, showFinancials: true },
+            KODAMBAKKAM: { id: 'kodambakkam', label: 'Kodambakkam Staff', outlet: 'Kodambakkam', showFinancials: false },
+            MAHALINGAPURAM: { id: 'mahalingapuram', label: 'Mahalingapuram Staff', outlet: 'Mahalingapuram', showFinancials: false }
+        };
+
+        const PRESET_PRODUCTS = {
+            Jelabi: { desc: 'Krishnaa Special Hot Jelabi Box', pack: '1 Kg', rate: 480 },
+            MixedSweets: { desc: 'Diwali Special Mixed Sweets Box', pack: '1 Kg', rate: 650 },
+            PremiumSavouries: { desc: 'Premium Savouries Combo (Mixture/Omapodi)', pack: '500g Pack', rate: 320 },
+            AssortedGift: { desc: 'Diwali Grand Assorted Sweet & Savoury Gift Box', pack: '1.5 Kg Box', rate: 980 },
+            FilterCoffee: { desc: 'Krishnaa Kaapi Traditional Coffee Powder', pack: '250g Pack', rate: 160 }
+        };
+
+        let currentRole = ROLES.ADMIN;
+        let ordersList = [];
+        let itemCounter = 0;
+
+        // INITIALIZATION
+        window.onload = function() {
+            loadSavedOrders();
+            setupDefaultDates();
+            switchRole('admin'); // Default view
+        };
+
+        // LOAD SAMPLE DATA IF LOCALSTORAGE IS EMPTY
+        function loadSavedOrders() {
+            const saved = localStorage.getItem('kjk_diwali_orders');
+            if (saved) {
+                try {
+                    ordersList = JSON.parse(saved);
+                } catch(e) {
+                    ordersList = [];
+                }
+            }
+            
+            if (!ordersList || ordersList.length === 0) {
+                // Populate sample realistic initial Diwali orders
+                ordersList = [
+                    {
+                        orderNo: 'KJK-2026-1001',
+                        orderDate: '2026-10-20',
+                        bookedBy: 'Rajesh',
+                        outlet: 'Kodambakkam',
+                        customer: {
+                            name: 'Senthil Kumar',
+                            company: 'Apex Tech Solutions',
+                            mobile: '9840123456',
+                            altMobile: '0442483000',
+                            email: 'senthil@apextech.com',
+                            address: '12, Arcot Road, Kodambakkam, Chennai',
+                            gstin: '33AAACA1234A1Z1'
+                        },
+                        delivery: {
+                            date: '2026-10-28',
+                            time: '10:30',
+                            mode: 'Corporate/Bulk',
+                            contactPerson: 'Senthil Kumar',
+                            mobile: '9840123456',
+                            address: 'Apex Tech Solutions, Mount Road, Guindy',
+                            landmark: 'Near Shell Petrol Pump'
+                        },
+                        items: [
+                            { no: 1, desc: 'Diwali Special Mixed Sweets Box', pack: '1 Kg', qty: 25, rate: 650, amount: 16250, notes: 'Individual Gift Wrapping' },
+                            { no: 2, desc: 'Krishnaa Special Hot Jelabi Box', pack: '1 Kg', qty: 25, rate: 480, amount: 12000, notes: 'Fresh Hot Delivery' }
+                        ],
+                        packingNotes: 'Include Corporate Greeting Cards with Company Logo',
+                        billing: {
+                            subtotal: 28250,
+                            discount: 1250,
+                            deliveryCharges: 500,
+                            gst: 0,
+                            grandTotal: 27500,
+                            advance: 10000,
+                            balance: 17500,
+                            balanceDate: '2026-10-28',
+                            paymentMode: 'Bank',
+                            paymentRef: 'NEFT-88921239'
+                        },
+                        pos: {
+                            billNo: 'PET-99101',
+                            billTime: '2026-10-20T11:00',
+                            billedOutlet: 'Kodambakkam',
+                            billedAmount: 27500,
+                            billedBy: 'Rajesh',
+                            difference: 0,
+                            reconStatus: 'Matched'
+                        },
+                        handover: {
+                            instructions: 'Deliver strictly by 10:30 AM for corporate pooja',
+                            takenBy: 'Rajesh',
+                            verifiedBy: 'Sivaraman (Manager)'
+                        }
+                    },
+                    {
+                        orderNo: 'KJK-2026-1002',
+                        orderDate: '2026-10-22',
+                        bookedBy: 'Anitha',
+                        outlet: 'Mahalingapuram',
+                        customer: {
+                            name: 'Meenakshi Sundaram',
+                            company: '',
+                            mobile: '9790987654',
+                            altMobile: '',
+                            email: 'meenakshi@gmail.com',
+                            address: '45, Mahalingapuram Main Road, Nungambakkam',
+                            gstin: ''
+                        },
+                        delivery: {
+                            date: '2026-10-29',
+                            time: '16:00',
+                            mode: 'Store Pickup',
+                            contactPerson: 'Meenakshi',
+                            mobile: '9790987654',
+                            address: 'Mahalingapuram Counter',
+                            landmark: 'Opp Ayyappan Temple'
+                        },
+                        items: [
+                            { no: 1, desc: 'Krishnaa Special Hot Jelabi Box', pack: '1 Kg', qty: 5, rate: 480, amount: 2400, notes: 'Crispy Special' },
+                            { no: 2, desc: 'Premium Savouries Combo Pack', pack: '500g Pack', qty: 5, rate: 320, amount: 1600, notes: 'Low Salt' }
+                        ],
+                        packingNotes: 'Red Festive Ribbon Tie on Box',
+                        billing: {
+                            subtotal: 4000,
+                            discount: 200,
+                            deliveryCharges: 0,
+                            gst: 0,
+                            grandTotal: 3800,
+                            advance: 3800,
+                            balance: 0,
+                            balanceDate: '2026-10-29',
+                            paymentMode: 'UPI',
+                            paymentRef: 'UPI/4298102910/GPay'
+                        },
+                        pos: {
+                            billNo: 'PET-99105',
+                            billTime: '2026-10-22T14:30',
+                            billedOutlet: 'Mahalingapuram',
+                            billedAmount: 3800,
+                            billedBy: 'Anitha',
+                            difference: 0,
+                            reconStatus: 'Matched'
+                        },
+                        handover: {
+                            instructions: 'Customer will collect directly at counter',
+                            takenBy: 'Anitha',
+                            verifiedBy: 'Murugan'
+                        }
+                    }
+                ];
+                saveOrdersToLocalStorage();
+            }
+        }
+
+        function saveOrdersToLocalStorage() {
+            localStorage.setItem('kjk_diwali_orders', JSON.stringify(ordersList));
+        }
+
+        function setupDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('form-order-date').value = today;
+            document.getElementById('deliv-date').value = today;
+            generateNextOrderNo();
+        }
+
+        function generateNextOrderNo() {
+            const nextId = 1001 + ordersList.length;
+            document.getElementById('form-order-no').value = `KJK-2026-${nextId}`;
+        }
+
+        // ROLE SWITCHING LOGIC & PERMISSION ENFORCEMENT
+        function switchRole(roleId) {
+            if (roleId === 'admin') currentRole = ROLES.ADMIN;
+            else if (roleId === 'kodambakkam') currentRole = ROLES.KODAMBAKKAM;
+            else if (roleId === 'mahalingapuram') currentRole = ROLES.MAHALINGAPURAM;
+
+            // Highlight Active Role Button
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-gold', 'text-brand-darkmaroon', 'shadow');
+                btn.classList.add('text-slate-300', 'hover:bg-white/10');
+            });
+
+            const activeBtn = document.getElementById(`role-btn-${currentRole.id}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-gold', 'text-brand-darkmaroon', 'shadow');
+                activeBtn.classList.remove('text-slate-300', 'hover:bg-white/10');
+            }
+
+            // Update Badge & Tag
+            const badge = document.getElementById('role-badge');
+            const finTag = document.getElementById('financial-access-tag');
+
+            if (currentRole.id === 'admin') {
+                badge.className = 'px-2.5 py-1 rounded bg-amber-400 text-slate-900 font-bold';
+                badge.innerText = 'ADMIN (FULL ACCESS)';
+                finTag.className = 'text-xs text-emerald-400 font-semibold';
+                finTag.innerHTML = '<i class="fa-solid fa-lock-open"></i> Full Financial Totals & Analytics Enabled';
+                
+                document.getElementById('admin-analytics-container').classList.remove('hidden');
+                document.getElementById('outlet-restricted-banner').classList.add('hidden');
+                document.getElementById('filter-outlet').disabled = false;
+                document.getElementById('filter-outlet').value = 'ALL';
+            } else {
+                badge.className = 'px-2.5 py-1 rounded bg-emerald-500 text-white font-bold';
+                badge.innerText = `${currentRole.outlet.toUpperCase()} STAFF`;
+                finTag.className = 'text-xs text-amber-300 font-semibold';
+                finTag.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Outlet Scope Active (Total Sales Figures Hidden)';
+
+                document.getElementById('admin-analytics-container').classList.add('hidden');
+                document.getElementById('outlet-restricted-banner').classList.remove('hidden');
+                document.getElementById('outlet-banner-name').innerText = currentRole.outlet;
+                
+                // Lock outlet filter to user's assigned branch
+                const filterOutletSelect = document.getElementById('filter-outlet');
+                filterOutletSelect.value = currentRole.outlet;
+                filterOutletSelect.disabled = true;
+
+                // Lock form outlet selector
+                document.getElementById('form-outlet').value = currentRole.outlet;
+            }
+
+            renderOrdersTable();
+            calculateAnalytics();
+        }
+
+        // RENDER ORDERS TABLE BASED ON PERMISSIONS
+        function renderOrdersTable() {
+            const tbody = document.getElementById('orders-tbody');
+            tbody.innerHTML = '';
+
+            const searchKey = document.getElementById('search-input').value.toLowerCase().trim();
+            const selectedOutlet = document.getElementById('filter-outlet').value;
+            const selectedMode = document.getElementById('filter-mode').value;
+
+            // Filter Orders
+            const filtered = ordersList.filter(ord => {
+                // Outlet isolation rule
+                if (currentRole.outlet && ord.outlet !== currentRole.outlet) {
+                    return false;
+                }
+                if (!currentRole.outlet && selectedOutlet !== 'ALL' && ord.outlet !== selectedOutlet) {
+                    return false;
+                }
+
+                // Delivery mode filter
+                if (selectedMode !== 'ALL' && ord.delivery.mode !== selectedMode) {
+                    return false;
+                }
+
+                // Search query
+                if (searchKey) {
+                    const matchOrder = ord.orderNo.toLowerCase().includes(searchKey);
+                    const matchName = ord.customer.name.toLowerCase().includes(searchKey);
+                    const matchMobile = ord.customer.mobile.includes(searchKey);
+                    return matchOrder || matchName || matchMobile;
+                }
+
+                return true;
+            });
+
+            document.getElementById('order-count-badge').innerText = `${filtered.length} Orders`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+                            No orders found matching current role filters or search query.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtered.forEach(ord => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+
+                const totalItemsCount = ord.items.reduce((sum, i) => sum + Number(i.qty), 0);
+
+                // Financial Display Isolation Guard:
+                // If user is Admin, show Grand Total. If Outlet Staff, show Restricted/Blurred mask.
+                let financialCellHtml = '';
+                if (currentRole.showFinancials) {
+                    financialCellHtml = `
+                        <div class="font-extrabold text-slate-800">₹${ord.billing.grandTotal.toLocaleString('en-IN')}</div>
+                        <div class="text-xs text-emerald-600 font-medium">Adv: ₹${ord.billing.advance.toLocaleString('en-IN')}</div>
+                        ${ord.billing.balance > 0 
+                            ? `<div class="text-xs text-amber-700 font-bold">Due: ₹${ord.billing.balance.toLocaleString('en-IN')}</div>`
+                            : `<div class="text-xs text-slate-400">Paid Full</div>`}
+                    `;
+                } else {
+                    financialCellHtml = `
+                        <div class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded font-mono border border-slate-200">
+                            <i class="fa-solid fa-eye-slash text-amber-600"></i> Restricted
+                        </div>
+                        <span class="text-[10px] text-slate-400">Total hidden for Outlet role</span>
+                    `;
+                }
+
+                let reconBadge = '';
+                if (ord.pos.reconStatus === 'Matched') {
+                    reconBadge = '<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-bold">Matched</span>';
+                } else if (ord.pos.reconStatus === 'Pending') {
+                    reconBadge = '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded font-bold">Pending</span>';
+                } else {
+                    reconBadge = '<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Mismatch</span>';
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <span class="font-mono font-bold text-brand-maroon">${ord.orderNo}</span>
+                        <div class="text-xs text-slate-500">${ord.orderDate}</div>
+                        <div class="text-[11px] text-slate-400">By: ${ord.bookedBy}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-slate-800">${ord.customer.name}</div>
+                        <div class="text-xs text-slate-600"><i class="fa-solid fa-phone text-slate-400"></i> ${ord.customer.mobile}</div>
+                        ${ord.customer.company ? `<div class="text-xs text-slate-500 italic">${ord.customer.company}</div>` : ''}
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold ${ord.outlet === 'Kodambakkam' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}">
+                            ${ord.outlet}
+                        </span>
+                        <div class="text-xs font-semibold text-slate-600 mt-1">${ord.delivery.mode}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-slate-800">${ord.delivery.date}</div>
+                        <div class="text-xs text-slate-500"><i class="fa-regular fa-clock"></i> ${ord.delivery.time}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-700">${totalItemsCount} Box(es) / Items</div>
+                        <div class="text-xs text-slate-500 truncate max-w-xs">${ord.items.map(i => i.desc).join(', ')}</div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        ${financialCellHtml}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        ${reconBadge}
+                        <div class="text-[11px] font-mono text-slate-400 mt-0.5">${ord.pos.billNo || 'No POS ID'}</div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <button onclick="viewVoucher('${ord.orderNo}')" class="p-1.5 bg-brand-lightgold text-brand-maroon hover:bg-yellow-200 rounded text-xs font-bold transition-all" title="View/Print Voucher">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                            <button onclick="deleteOrder('${ord.orderNo}')" class="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs transition-all" title="Delete Order">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // CALCULATE ADMIN ANALYTICS
+        function calculateAnalytics() {
+            if (!currentRole.showFinancials) return;
+
+            let totalSales = 0;
+            let totalAdvance = 0;
+            let totalBalance = 0;
+
+            ordersList.forEach(ord => {
+                totalSales += Number(ord.billing.grandTotal || 0);
+                totalAdvance += Number(ord.billing.advance || 0);
+                totalBalance += Number(ord.billing.balance || 0);
+            });
+
+            document.getElementById('stat-total-sales').innerText = `₹${totalSales.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-advance').innerText = `₹${totalAdvance.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-balance').innerText = `₹${totalBalance.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-orders').innerText = ordersList.length;
+        }
+
+        // SECTION NAVIGATION
+        function showSection(sectionId) {
+            document.getElementById('section-dashboard').classList.add('hidden');
+            document.getElementById('section-new-order').classList.add('hidden');
+
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+
+            if (sectionId === 'new-order') {
+                resetForm();
+            } else {
+                renderOrdersTable();
+                calculateAnalytics();
+            }
+        }
+
+        // FORM DYNAMIC ITEM MANAGEMENT
+        function addNewItemRow(preset = null) {
+            itemCounter++;
+            const tbody = document.getElementById('items-tbody');
+
+            const tr = document.createElement('tr');
+            tr.id = `item-row-${itemCounter}`;
+            tr.className = 'border-b border-slate-200 hover:bg-slate-50';
+
+            const itemNo = tbody.children.length + 1;
+
+            tr.innerHTML = `
+                <td class="p-2 border border-slate-300 text-center font-bold text-slate-500 item-row-index">${itemNo}</td>
+                <td class="p-2 border border-slate-300">
+                    <input type="text" id="item-desc-${itemCounter}" required placeholder="Product name/description" value="${preset ? preset.desc : ''}" class="w-full p-1.5 border border-slate-300 rounded text-xs font-medium">
+                </td>
+                <td class="p-2 border border-slate-300">
+                    <input type="text" id="item-pack-${itemCounter}" placeholder="1 Kg / 500g" value="${preset ? preset.pack : '1 Kg'}" class="w-full p-1.5 border border-slate-300 rounded text-xs">
+                </td>
+                <td class="p-2 border border-slate-300">
+                    <input type="number" id="item-qty-${itemCounter}" min="1" value="${preset ? 1 : 1}" oninput="calculateRowAmount(${itemCounter})" class="w-full p-1.5 border border-slate-300 rounded text-xs font-bold text-slate-800">
+                </td>
+                <td class="p-2 border border-slate-300">
+                    <input type="number" id="item-rate-${itemCounter}" min="0" value="${preset ? preset.rate : 0}" oninput="calculateRowAmount(${itemCounter})" class="w-full p-1.5 border border-slate-300 rounded text-xs font-semibold">
+                </td>
+                <td class="p-2 border border-slate-300 text-right">
+                    <input type="number" id="item-amount-${itemCounter}" readonly value="${preset ? preset.rate : 0}" class="w-full p-1.5 bg-slate-100 border border-slate-300 rounded text-xs font-extrabold text-slate-800 text-right">
+                </td>
+                <td class="p-2 border border-slate-300">
+                    <input type="text" id="item-notes-${itemCounter}" placeholder="Packing note" class="w-full p-1.5 border border-slate-300 rounded text-xs">
+                </td>
+                <td class="p-2 border border-slate-300 text-center">
+                    <button type="button" onclick="removeItemRow(${itemCounter})" class="text-red-500 hover:text-red-700 text-xs">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            calculateBillingTotals();
+        }
+
+        function addPresetItem(presetKey) {
+            if (!presetKey || !PRESET_PRODUCTS[presetKey]) return;
+            addNewItemRow(PRESET_PRODUCTS[presetKey]);
+            document.getElementById('preset-item-selector').value = '';
+        }
+
+        function removeItemRow(id) {
+            const row = document.getElementById(`item-row-${id}`);
+            if (row) {
+                row.remove();
+                reindexRows();
+                calculateBillingTotals();
+            }
+        }
+
+        function reindexRows() {
+            const indices = document.querySelectorAll('.item-row-index');
+            indices.forEach((el, index) => {
+                el.innerText = index + 1;
+            });
+        }
+
+        function calculateRowAmount(id) {
+            const qty = parseFloat(document.getElementById(`item-qty-${id}`).value) || 0;
+            const rate = parseFloat(document.getElementById(`item-rate-${id}`).value) || 0;
+            const amount = qty * rate;
+            document.getElementById(`item-amount-${id}`).value = amount;
+            calculateBillingTotals();
+        }
+
+        function calculateBillingTotals() {
+            let subtotal = 0;
+            const amounts = document.querySelectorAll('[id^="item-amount-"]');
+            amounts.forEach(input => {
+                subtotal += parseFloat(input.value) || 0;
+            });
+
+            document.getElementById('bill-subtotal').value = subtotal;
+
+            const discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+            const delivery = parseFloat(document.getElementById('bill-delivery').value) || 0;
+            const gst = parseFloat(document.getElementById('bill-gst').value) || 0;
+
+            const grandTotal = Math.max(0, subtotal - discount + delivery + gst);
+            document.getElementById('bill-grand-total').value = grandTotal;
+
+            const advance = parseFloat(document.getElementById('bill-advance').value) || 0;
+            const balance = Math.max(0, grandTotal - advance);
+            document.getElementById('bill-balance').value = balance;
+
+            calculateReconciliation();
+        }
+
+        function calculateReconciliation() {
+            const orderOutlet = document.getElementById('form-outlet').value;
+            document.getElementById('pos-billed-outlet').value = orderOutlet;
+
+            const grandTotal = parseFloat(document.getElementById('bill-grand-total').value) || 0;
+            const posBilled = parseFloat(document.getElementById('pos-billed-amount').value) || 0;
+
+            const diff = posBilled - grandTotal;
+            document.getElementById('pos-difference').value = diff;
+
+            const statusSelect = document.getElementById('pos-recon-status');
+            if (posBilled === 0) {
+                statusSelect.value = 'Pending';
+            } else if (diff === 0) {
+                statusSelect.value = 'Matched';
+            } else {
+                statusSelect.value = 'Mismatch';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('order-form').reset();
+            document.getElementById('items-tbody').innerHTML = '';
+            itemCounter = 0;
+            setupDefaultDates();
+            
+            // Add initial empty item row
+            addNewItemRow();
+
+            if (currentRole.outlet) {
+                document.getElementById('form-outlet').value = currentRole.outlet;
+            }
+        }
+
+        // HANDLE FORM SUBMISSION & CREATE ORDER
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            // Collect Items
+            const items = [];
+            const rows = document.querySelectorAll('#items-tbody tr');
+            
+            if (rows.length === 0) {
+                alert('Please add at least one item line to the order!');
+                return;
+            }
+
+            rows.forEach((row, idx) => {
+                const id = row.id.replace('item-row-', '');
+                items.push({
+                    no: idx + 1,
+                    desc: document.getElementById(`item-desc-${id}`).value,
+                    pack: document.getElementById(`item-pack-${id}`).value,
+                    qty: parseFloat(document.getElementById(`item-qty-${id}`).value) || 0,
+                    rate: parseFloat(document.getElementById(`item-rate-${id}`).value) || 0,
+                    amount: parseFloat(document.getElementById(`item-amount-${id}`).value) || 0,
+                    notes: document.getElementById(`item-notes-${id}`).value
+                });
+            });
+
+            const newOrder = {
+                orderNo: document.getElementById('form-order-no').value,
+                orderDate: document.getElementById('form-order-date').value,
+                bookedBy: document.getElementById('form-booked-by').value,
+                outlet: document.getElementById('form-outlet').value,
+                customer: {
+                    name: document.getElementById('cust-name').value,
+                    company: document.getElementById('cust-company').value,
+                    mobile: document.getElementById('cust-mobile').value,
+                    altMobile: document.getElementById('cust-alt-mobile').value,
+                    email: document.getElementById('cust-email').value,
+                    address: document.getElementById('cust-address').value,
+                    gstin: document.getElementById('cust-gstin').value
+                },
+                delivery: {
+                    date: document.getElementById('deliv-date').value,
+                    time: document.getElementById('deliv-time').value,
+                    mode: document.getElementById('deliv-mode').value,
+                    contactPerson: document.getElementById('deliv-contact-person').value,
+                    mobile: document.getElementById('deliv-mobile').value,
+                    address: document.getElementById('deliv-address').value,
+                    landmark: document.getElementById('deliv-landmark').value
+                },
+                items: items,
+                packingNotes: document.getElementById('packing-custom-notes').value,
+                billing: {
+                    subtotal: parseFloat(document.getElementById('bill-subtotal').value) || 0,
+                    discount: parseFloat(document.getElementById('bill-discount').value) || 0,
+                    deliveryCharges: parseFloat(document.getElementById('bill-delivery').value) || 0,
+                    gst: parseFloat(document.getElementById('bill-gst').value) || 0,
+                    grandTotal: parseFloat(document.getElementById('bill-grand-total').value) || 0,
+                    advance: parseFloat(document.getElementById('bill-advance').value) || 0,
+                    balance: parseFloat(document.getElementById('bill-balance').value) || 0,
+                    balanceDate: document.getElementById('bill-balance-date').value,
+                    paymentMode: document.getElementById('bill-payment-mode').value,
+                    paymentRef: document.getElementById('bill-payment-ref').value
+                },
+                pos: {
+                    billNo: document.getElementById('pos-bill-no').value,
+                    billTime: document.getElementById('pos-bill-time').value,
+                    billedOutlet: document.getElementById('pos-billed-outlet').value,
+                    billedAmount: parseFloat(document.getElementById('pos-billed-amount').value) || 0,
+                    billedBy: document.getElementById('pos-billed-by').value,
+                    difference: parseFloat(document.getElementById('pos-difference').value) || 0,
+                    reconStatus: document.getElementById('pos-recon-status').value
+                },
+                handover: {
+                    instructions: document.getElementById('handover-instructions').value,
+                    takenBy: document.getElementById('handover-taken-by').value,
+                    verifiedBy: document.getElementById('handover-verified-by').value
+                }
+            };
+
+            ordersList.unshift(newOrder); // Add to beginning of array
+            saveOrdersToLocalStorage();
+
+            // Open printable voucher immediately
+            viewVoucher(newOrder.orderNo);
+            showSection('dashboard');
+        }
+
+        // VIEW & PRINT CUSTOMER VOUCHER SLIP
+        function viewVoucher(orderNo) {
+            const ord = ordersList.find(o => o.orderNo === orderNo);
+            if (!ord) return;
+
+            const modal = document.getElementById('print-voucher-modal');
+            const container = document.getElementById('voucher-content');
+
+            const itemsRowsHtml = ord.items.map(item => `
+                <tr class="border-b border-slate-200 text-slate-800">
+                    <td class="p-2 text-center font-bold">${item.no}</td>
+                    <td class="p-2 font-medium">${item.desc}</td>
+                    <td class="p-2">${item.pack}</td>
+                    <td class="p-2 text-center font-bold">${item.qty}</td>
+                    <td class="p-2 text-right">₹${item.rate}</td>
+                    <td class="p-2 text-right font-bold">₹${item.amount.toLocaleString('en-IN')}</td>
+                    <td class="p-2 text-slate-500">${item.notes || '-'}</td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <!-- VOUCHER HEADER -->
+                <div class="border-b-2 border-brand-maroon pb-4 text-center">
+                    <h2 class="font-heading text-2xl font-black tracking-wider text-brand-maroon uppercase">KRISHNAA JELABI KADAI</h2>
+                    <p class="text-xs text-amber-800 font-semibold">CUSTOMER ORDER FORM & VOUCHER SLIP</p>
+                    <p class="text-[11px] text-slate-500">A Legacy of Taste & Trust | Since 1985 &bull; Sweets &bull; Savouries &bull; Gift Packs</p>
+                    <div class="mt-2 text-[11px] font-bold text-slate-700">
+                        Kodambakkam | Mahalingapuram/Nungambakkam &bull; Bulk Hotline: 8680820307 / 8608720307
+                    </div>
+                </div>
+
+                <!-- META INFO -->
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded border border-slate-200">
+                    <div>
+                        <div><strong>Order No:</strong> <span class="font-mono text-brand-maroon font-bold">${ord.orderNo}</span></div>
+                        <div><strong>Order Date:</strong> ${ord.orderDate}</div>
+                        <div><strong>Booked By:</strong> ${ord.bookedBy}</div>
+                    </div>
+                    <div class="text-right">
+                        <div><strong>Billed Outlet:</strong> ${ord.outlet}</div>
+                        <div><strong>Fulfillment Mode:</strong> ${ord.delivery.mode}</div>
+                        <div><strong>POS Invoice Ref:</strong> ${ord.pos.billNo || 'Pending POS'}</div>
+                    </div>
+                </div>
+
+                <!-- 01 CUSTOMER DETAILS -->
+                <div class="border p-3 rounded space-y-1">
+                    <div class="font-bold text-brand-maroon border-b pb-1 mb-1">01 CUSTOMER & BILLING DETAILS</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><strong>Customer Name:</strong> ${ord.customer.name}</div>
+                        <div><strong>Mobile Number:</strong> ${ord.customer.mobile}</div>
+                        ${ord.customer.company ? `<div><strong>Company:</strong> ${ord.customer.company}</div>` : ''}
+                        ${ord.customer.altMobile ? `<div><strong>Alt Contact:</strong> ${ord.customer.altMobile}</div>` : ''}
+                        ${ord.customer.address ? `<div class="col-span-2"><strong>Billing Address:</strong> ${ord.customer.address}</div>` : ''}
+                        ${ord.customer.gstin ? `<div><strong>GSTIN:</strong> ${ord.customer.gstin}</div>` : ''}
+                    </div>
+                </div>
+
+                <!-- 02 DELIVERY DETAILS -->
+                <div class="border p-3 rounded space-y-1">
+                    <div class="font-bold text-brand-maroon border-b pb-1 mb-1">02 DELIVERY / COLLECTION DETAILS</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><strong>Required Date:</strong> ${ord.delivery.date}</div>
+                        <div><strong>Required Time Slot:</strong> ${ord.delivery.time}</div>
+                        <div><strong>Contact Person:</strong> ${ord.delivery.contactPerson || ord.customer.name}</div>
+                        <div><strong>Delivery Mobile:</strong> ${ord.delivery.mobile || ord.customer.mobile}</div>
+                        ${ord.delivery.address ? `<div class="col-span-2"><strong>Delivery Location:</strong> ${ord.delivery.address} ${ord.delivery.landmark ? `(Landmark: ${ord.delivery.landmark})` : ''}</div>` : ''}
+                    </div>
+                </div>
+
+                <!-- 03 ITEMS TABLE -->
+                <div class="border rounded overflow-hidden">
+                    <div class="bg-slate-100 font-bold text-brand-maroon p-2 text-xs border-b">03 ITEMS & PACKING DETAILS</div>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-[11px] font-bold border-b text-slate-600">
+                                <th class="p-2 w-8 text-center">No</th>
+                                <th class="p-2">Description</th>
+                                <th class="p-2">Pack Size</th>
+                                <th class="p-2 text-center">Qty</th>
+                                <th class="p-2 text-right">Rate</th>
+                                <th class="p-2 text-right">Amount</th>
+                                <th class="p-2">Packing Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsRowsHtml}
+                        </tbody>
+                    </table>
+                    ${ord.packingNotes ? `<div class="p-2 bg-amber-50 text-xs border-t text-amber-900"><strong>Gift/Customisation Notes:</strong> ${ord.packingNotes}</div>` : ''}
+                </div>
+
+                <!-- 04 BILLING SUMMARY -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border p-3 rounded">
+                        <div class="font-bold text-brand-maroon border-b pb-1 mb-1">PAYMENT REFERENCE</div>
+                        <div class="space-y-1">
+                            <div><strong>Payment Mode:</strong> ${ord.billing.paymentMode}</div>
+                            <div><strong>Ref / Transaction ID:</strong> ${ord.billing.paymentRef || 'N/A'}</div>
+                            <div><strong>Reconciliation Status:</strong> <span class="font-bold">${ord.pos.reconStatus}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="border p-3 rounded bg-slate-50 space-y-1 text-right">
+                        <div class="font-bold text-brand-maroon border-b pb-1 mb-1 text-left">04 BILLING SUMMARY</div>
+                        <div class="flex justify-between"><span>Sub Total:</span> <span>₹${ord.billing.subtotal.toLocaleString('en-IN')}</span></div>
+                        ${ord.billing.discount ? `<div class="flex justify-between text-emerald-700"><span>Discount:</span> <span>- ₹${ord.billing.discount.toLocaleString('en-IN')}</span></div>` : ''}
+                        ${ord.billing.deliveryCharges ? `<div class="flex justify-between"><span>Delivery Charges:</span> <span>+ ₹${ord.billing.deliveryCharges.toLocaleString('en-IN')}</span></div>` : ''}
+                        <div class="flex justify-between font-extrabold text-sm border-t pt-1 border-slate-300 text-brand-maroon">
+                            <span>GRAND TOTAL:</span> <span>₹${ord.billing.grandTotal.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="flex justify-between text-emerald-700 font-bold"><span>Advance Received:</span> <span>₹${ord.billing.advance.toLocaleString('en-IN')}</span></div>
+                        <div class="flex justify-between text-amber-800 font-extrabold border-t pt-1 border-slate-300">
+                            <span>BALANCE DUE:</span> <span>₹${ord.billing.balance.toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 06 HANDOVER & CONFIRMATION -->
+                <div class="border p-3 rounded text-[11px] space-y-2">
+                    <div><strong>Special Instructions / Handling:</strong> ${ord.handover.instructions || 'Standard handle with care.'}</div>
+                    <div class="grid grid-cols-3 gap-2 pt-4 text-center border-t border-dashed border-slate-300">
+                        <div>
+                            <div class="font-bold">${ord.handover.takenBy}</div>
+                            <div class="text-slate-400">Order Taken By</div>
+                        </div>
+                        <div>
+                            <div class="font-bold">${ord.handover.verifiedBy || 'Pending'}</div>
+                            <div class="text-slate-400">Verified By Manager</div>
+                        </div>
+                        <div>
+                            <div class="font-bold">____________________</div>
+                            <div class="text-slate-400">Customer Signature</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeVoucherModal() {
+            document.getElementById('print-voucher-modal').classList.add('hidden');
+        }
+
+        function deleteOrder(orderNo) {
+            if (confirm(`Are you sure you want to delete order ${orderNo}?`)) {
+                ordersList = ordersList.filter(o => o.orderNo !== orderNo);
+                saveOrdersToLocalStorage();
+                renderOrdersTable();
+                calculateAnalytics();
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('filter-mode').value = 'ALL';
+            if (currentRole.id === 'admin') {
+                document.getElementById('filter-outlet').value = 'ALL';
+            }
+            renderOrdersTable();
+        }
+
+        function toggleDeliveryAddressField() {
+            const mode = document.getElementById('deliv-mode').value;
+            const addrInput = document.getElementById('deliv-address');
+            if (mode === 'Store Pickup') {
+                addrInput.value = 'Store Pickup Counter';
+            } else {
+                addrInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
