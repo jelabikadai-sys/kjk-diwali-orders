@@ -3,6 +3,578 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krishnaa Jelabi Kadai - Diwali Order System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kjk: { maroon: '#800020', gold: '#D4AF37', lightGold: '#FFF8E7', darkMaroon: '#4A0012', cream: '#FCF9F2' }
+                    },
+                    fontFamily: { brand: ['Cinzel', 'serif'], body: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #printableSlip, #printableSlip * { visibility: visible; }
+            #printableSlip { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+        .masked-financial { filter: blur(4px); user-select: none; }
+    </style>
+</head>
+<body class="bg-slate-100 font-body text-slate-800 min-h-screen">
+
+    <!-- LOGIN MODAL (FORCED VISIBLE ON STARTUP) -->
+    <div id="loginModal" class="fixed inset-0 bg-kjk-darkMaroon/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-2 border-kjk-gold">
+            <div class="bg-kjk-maroon p-6 text-center text-white relative">
+                <div class="inline-block bg-kjk-gold text-kjk-darkMaroon p-3 rounded-full mb-2 shadow-lg">
+                    <i class="fa-solid fa-store fa-2x"></i>
+                </div>
+                <h1 class="font-brand text-2xl font-bold tracking-wide text-kjk-gold">KRISHNAA JELABI KADAI</h1>
+                <p class="text-xs uppercase tracking-widest text-amber-200 mt-1">Secure Diwali POS Login Portal</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Login ID</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3 top-3.5 text-slate-400"></i>
+                        <input type="text" id="loginUserId" placeholder="e.g. admin01, kodam01, nung01" required
+                            class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kjk-maroon outline-none text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Security PIN</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400"></i>
+                        <input type="password" id="loginPin" placeholder="Enter PIN" required
+                            class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kjk-maroon outline-none text-sm">
+                    </div>
+                </div>
+                
+                <div id="loginError" class="hidden text-xs text-red-600 font-semibold bg-red-50 p-2.5 rounded border border-red-200 text-center"></div>
+
+                <button type="submit" 
+                    class="w-full bg-kjk-maroon hover:bg-kjk-darkMaroon text-kjk-gold font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login to System
+                </button>
+
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500 space-y-1 mt-4">
+                    <p class="font-bold text-slate-700 mb-1">Access Credentials:</p>
+                    <p>👑 <span class="font-semibold text-slate-700">Admin:</span> <code class="bg-slate-200 px-1 rounded">admin01</code> / <code class="bg-slate-200 px-1 rounded">admin123</code></p>
+                    <p>🏬 <span class="font-semibold text-slate-700">Kodambakkam:</span> <code class="bg-slate-200 px-1 rounded">kodam01</code> / <code class="bg-slate-200 px-1 rounded">kodam123</code></p>
+                    <p>🏬 <span class="font-semibold text-slate-700">Nungambakkam:</span> <code class="bg-slate-200 px-1 rounded">nung01</code> / <code class="bg-slate-200 px-1 rounded">nung123</code></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER (HIDDEN UNTIL LOGGED IN) -->
+    <div id="appContainer" class="hidden min-h-screen flex flex-col">
+        <header class="bg-kjk-maroon text-white shadow-lg sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-kjk-gold text-kjk-darkMaroon w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl shadow">K</div>
+                    <div>
+                        <h1 class="font-brand text-lg font-bold text-kjk-gold tracking-wide leading-none">KRISHNAA JELABI KADAI</h1>
+                        <p class="text-[11px] text-amber-200 tracking-wider">Diwali Order Management Portal</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-kjk-darkMaroon px-4 py-2 rounded-xl border border-kjk-gold/30">
+                    <div class="text-right text-xs">
+                        <div id="activeUserName" class="font-bold text-amber-300">Staff</div>
+                        <div id="activeUserBranch" class="text-amber-100/70 text-[10px]">Branch</div>
+                    </div>
+                    <button onclick="handleLogout()" title="Logout" class="bg-red-800 hover:bg-red-700 text-white w-8 h-8 rounded-lg flex items-center justify-center transition">
+                        <i class="fa-solid fa-power-off text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="bg-kjk-darkMaroon border-t border-kjk-gold/20 px-4">
+                <div class="max-w-7xl mx-auto flex overflow-x-auto space-x-1 py-1">
+                    <button onclick="switchTab('orders')" id="tabBtn-orders" class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg bg-kjk-maroon text-kjk-gold border-t-2 border-kjk-gold flex items-center gap-2"><i class="fa-solid fa-list-check"></i> Orders Dashboard</button>
+                    <button onclick="switchTab('newOrder')" id="tabBtn-newOrder" class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg text-slate-300 hover:text-white flex items-center gap-2"><i class="fa-solid fa-cart-plus"></i> New Order Form</button>
+                    <button onclick="switchTab('posRecon')" id="tabBtn-posRecon" class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg text-slate-300 hover:text-white flex items-center gap-2"><i class="fa-solid fa-cash-register"></i> POS Reconciliation</button>
+                    <button onclick="switchTab('adminPanel')" id="tabBtn-adminPanel" class="tab-btn px-4 py-2 text-xs font-semibold rounded-t-lg text-slate-300 hover:text-white flex items-center gap-2 admin-only hidden"><i class="fa-solid fa-users-gear"></i> Staff & Access</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+            <div id="financialSummarySection" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500 flex items-center justify-between">
+                    <div><p class="text-xs uppercase font-bold text-slate-400">Total Sales</p><h3 id="statTotalSales" class="text-2xl font-black text-slate-800">₹0</h3></div>
+                    <div class="bg-emerald-100 text-emerald-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between">
+                    <div><p class="text-xs uppercase font-bold text-slate-400">Advances</p><h3 id="statTotalAdvance" class="text-2xl font-black text-slate-800">₹0</h3></div>
+                    <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-amber-500 flex items-center justify-between">
+                    <div><p class="text-xs uppercase font-bold text-slate-400">Balance Due</p><h3 id="statTotalBalance" class="text-2xl font-black text-slate-800">₹0</h3></div>
+                    <div class="bg-amber-100 text-amber-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-kjk-maroon flex items-center justify-between">
+                    <div><p class="text-xs uppercase font-bold text-slate-400">Orders Count</p><h3 id="statTotalOrders" class="text-2xl font-black text-slate-800">0</h3></div>
+                    <div class="bg-kjk-lightGold text-kjk-maroon w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-box-archive"></i></div>
+                </div>
+            </div>
+
+            <!-- ORDERS VIEW -->
+            <section id="view-orders" class="tab-view space-y-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        <input type="text" id="orderSearchInput" oninput="renderOrdersTable()" placeholder="Search Customer, Order No..." class="w-full text-sm border-none focus:outline-none bg-transparent">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <select id="branchFilter" onchange="renderOrdersTable()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5">
+                            <option value="ALL">All Outlets</option>
+                            <option value="Kodambakkam">Kodambakkam</option>
+                            <option value="Mahalingapuram">Mahalingapuram</option>
+                            <option value="Office">Office</option>
+                        </select>
+                        <select id="modeFilter" onchange="renderOrdersTable()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5">
+                            <option value="ALL">All Delivery Modes</option>
+                            <option value="Store Pickup">Store Pickup</option>
+                            <option value="Home Delivery">Home Delivery</option>
+                            <option value="Corporate/Bulk">Corporate/Bulk</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-50 text-slate-600 uppercase font-semibold border-b">
+                                <tr>
+                                    <th class="p-3">Order Details</th>
+                                    <th class="p-3">Customer Info</th>
+                                    <th class="p-3">Outlet & Mode</th>
+                                    <th class="p-3">Delivery Date</th>
+                                    <th class="p-3">Items Summary</th>
+                                    <th class="p-3 text-right">Financial Status</th>
+                                    <th class="p-3 text-center">POS Recon</th>
+                                    <th class="p-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW ORDER VIEW -->
+            <section id="view-newOrder" class="tab-view hidden bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-6">
+                <div class="border-b pb-4 flex justify-between items-center">
+                    <h2 class="font-brand text-lg font-bold text-kjk-maroon">CUSTOMER ORDER ENTRY FORM</h2>
+                    <span class="text-xs font-mono font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">New Order</span>
+                </div>
+                <form id="orderEntryForm" onsubmit="handleSaveOrder(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Booked Outlet *</label>
+                            <select id="formOutlet" required class="w-full text-xs p-2.5 bg-white border rounded-lg">
+                                <option value="Kodambakkam">Kodambakkam</option>
+                                <option value="Mahalingapuram">Mahalingapuram</option>
+                                <option value="Office">Office</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Booked By Staff</label>
+                            <input type="text" id="formBookedBy" readonly class="w-full text-xs p-2.5 bg-slate-200 border rounded-lg font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Order Date</label>
+                            <input type="date" id="formOrderDate" required class="w-full text-xs p-2.5 bg-white border rounded-lg">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-xs text-slate-600 mb-1">Customer Name *</label><input type="text" id="formCustName" required class="w-full text-xs p-2 border rounded-lg"></div>
+                        <div><label class="block text-xs text-slate-600 mb-1">Mobile Number *</label><input type="tel" id="formCustMobile" required class="w-full text-xs p-2 border rounded-lg"></div>
+                        <div><label class="block text-xs text-slate-600 mb-1">Company</label><input type="text" id="formCustCompany" class="w-full text-xs p-2 border rounded-lg"></div>
+                        <div class="md:col-span-3"><label class="block text-xs text-slate-600 mb-1">Billing Address</label><input type="text" id="formCustAddress" class="w-full text-xs p-2 border rounded-lg"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-xs text-slate-600 mb-1">Required Date *</label><input type="date" id="formReqDate" required class="w-full text-xs p-2 border rounded-lg"></div>
+                        <div><label class="block text-xs text-slate-600 mb-1">Required Time *</label><input type="time" id="formReqTime" required class="w-full text-xs p-2 border rounded-lg"></div>
+                        <div>
+                            <label class="block text-xs text-slate-600 mb-1">Delivery Mode *</label>
+                            <select id="formDelivMode" class="w-full text-xs p-2 border rounded-lg">
+                                <option value="Store Pickup">Store Pickup</option>
+                                <option value="Home Delivery">Home Delivery</option>
+                                <option value="Corporate/Bulk">Corporate/Bulk</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3"><label class="block text-xs text-slate-600 mb-1">Delivery Address / Landmark</label><input type="text" id="formDelivAddress" class="w-full text-xs p-2 border rounded-lg"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-kjk-maroon">Items & Packing Details</h3>
+                            <button type="button" onclick="addOrderItemRow()" class="text-xs bg-emerald-600 text-white px-3 py-1 rounded"><i class="fa-solid fa-plus"></i> Add Item</button>
+                        </div>
+                        <div class="overflow-x-auto border rounded-lg">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-slate-100 uppercase">
+                                    <tr>
+                                        <th class="p-2">Description</th>
+                                        <th class="p-2 w-24">Pack</th>
+                                        <th class="p-2 w-20">Qty</th>
+                                        <th class="p-2 w-24">Rate (₹)</th>
+                                        <th class="p-2 w-28">Amount (₹)</th>
+                                        <th class="p-2">Notes</th>
+                                        <th class="p-2 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderItemsTableBody" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-amber-50/50 p-4 rounded-xl border border-amber-200">
+                        <div class="space-y-3">
+                            <label class="block text-xs font-bold text-slate-600">Custom Notes & Ribbon</label>
+                            <textarea id="formCustomNotes" rows="3" class="w-full text-xs p-2 border rounded-lg"></textarea>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Payment Mode</label>
+                                <select id="formPayMode" class="w-full text-xs p-2 border rounded-lg">
+                                    <option value="Cash">Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Card">Card</option>
+                                    <option value="Credit/Due">Credit/Due</option>
+                                </select>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-600 mb-1">Payment Ref ID</label><input type="text" id="formPayRef" class="w-full text-xs p-2 border rounded-lg"></div>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between"><span>Sub Total:</span><input type="number" id="calcSubTotal" readonly value="0" class="w-28 text-right p-1 bg-slate-100 border rounded font-semibold"></div>
+                            <div class="flex justify-between"><span>Discount:</span><input type="number" id="calcDiscount" oninput="calculateBillingTotals()" value="0" class="w-28 text-right p-1 border rounded"></div>
+                            <div class="flex justify-between"><span>Delivery:</span><input type="number" id="calcDelivery" oninput="calculateBillingTotals()" value="0" class="w-28 text-right p-1 border rounded"></div>
+                            <div class="flex justify-between font-bold text-kjk-maroon pt-2 border-t"><span>GRAND TOTAL:</span><input type="number" id="calcGrandTotal" readonly value="0" class="w-28 text-right p-1 bg-amber-100 border rounded font-bold"></div>
+                            <div class="flex justify-between pt-2"><span class="text-emerald-700 font-semibold">Advance:</span><input type="number" id="calcAdvance" oninput="calculateBillingTotals()" value="0" class="w-28 text-right p-1 border rounded font-semibold"></div>
+                            <div class="flex justify-between font-bold text-red-700"><span>BALANCE DUE:</span><input type="number" id="calcBalance" readonly value="0" class="w-28 text-right p-1 bg-red-50 border rounded font-bold"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="submit" class="px-6 py-2.5 text-xs font-bold text-kjk-gold bg-kjk-maroon rounded-lg shadow"><i class="fa-solid fa-floppy-disk"></i> Save Order Form</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- POS RECONCILIATION VIEW -->
+            <section id="view-posRecon" class="tab-view hidden bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-4">
+                <h2 class="font-brand text-lg font-bold text-kjk-maroon border-b pb-3">POS RECONCILIATION</h2>
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead class="bg-slate-100 uppercase">
+                        <tr><th class="p-3">Order No</th><th class="p-3">Customer</th><th class="p-3">Manual Total</th><th class="p-3">POS Bill No</th><th class="p-3">POS Amount</th><th class="p-3 text-center">Status</th></tr>
+                    </thead>
+                    <tbody id="posReconTableBody" class="divide-y"></tbody>
+                </table>
+            </section>
+
+            <!-- ADMIN STAFF MANAGEMENT VIEW -->
+            <section id="view-adminPanel" class="tab-view hidden space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-6">
+                    <div class="border-b pb-4 flex justify-between items-center">
+                        <h2 class="font-brand text-lg font-bold text-kjk-maroon">STAFF ACCESS MANAGEMENT</h2>
+                        <button onclick="openAddUserModal()" class="bg-kjk-maroon text-kjk-gold px-4 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-user-plus"></i> Add User</button>
+                    </div>
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead class="bg-slate-100 uppercase">
+                            <tr><th class="p-3">Name</th><th class="p-3">ID</th><th class="p-3">Role</th><th class="p-3">Branch</th><th class="p-3">Action</th></tr>
+                        </thead>
+                        <tbody id="staffUsersTableBody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ADD USER MODAL -->
+    <div id="addUserModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="font-brand text-base font-bold text-kjk-maroon border-b pb-2">Create Team Login</h3>
+            <form onsubmit="handleSaveUser(event)" class="space-y-3 text-xs">
+                <div><label class="block font-semibold mb-1">Name</label><input type="text" id="newUserName" required class="w-full p-2 border rounded"></div>
+                <div><label class="block font-semibold mb-1">Login ID</label><input type="text" id="newUserId" required class="w-full p-2 border rounded"></div>
+                <div><label class="block font-semibold mb-1">PIN</label><input type="password" id="newUserPin" required class="w-full p-2 border rounded"></div>
+                <div><label class="block font-semibold mb-1">Role</label><select id="newUserRole" class="w-full p-2 border rounded"><option value="Staff">Staff</option><option value="Admin">Admin</option></select></div>
+                <div><label class="block font-semibold mb-1">Branch</label><select id="newUserBranch" class="w-full p-2 border rounded"><option value="Kodambakkam">Kodambakkam</option><option value="Mahalingapuram">Mahalingapuram</option><option value="Office">Office</option><option value="All">All</option></select></div>
+                <div class="flex items-center gap-2 pt-2"><input type="checkbox" id="newUserCanViewTotals"><label for="newUserCanViewTotals" class="font-semibold">Allow Viewing Totals</label></div>
+                <div class="flex justify-end gap-2 pt-4 border-t"><button type="button" onclick="closeAddUserModal()" class="px-4 py-2 bg-slate-200 rounded">Cancel</button><button type="submit" class="px-4 py-2 bg-kjk-maroon text-kjk-gold font-bold rounded">Save</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="printableSlip" class="hidden"></div>
+
+    <script>
+        const DEFAULT_USERS = [
+            { id: "admin01", name: "Navaneetha Krishnan", pin: "admin123", role: "Admin", branch: "All", canViewTotals: true, active: true },
+            { id: "kodam01", name: "Kodambakkam Billing", pin: "kodam123", role: "Staff", branch: "Kodambakkam", canViewTotals: false, active: true },
+            { id: "nung01", name: "Nungambakkam Billing", pin: "nung123", role: "Staff", branch: "Mahalingapuram", canViewTotals: false, active: true }
+        ];
+
+        let systemUsers = JSON.parse(localStorage.getItem('kjk_users')) || DEFAULT_USERS;
+        let systemOrders = JSON.parse(localStorage.getItem('kjk_orders')) || [
+            { orderNo: "KJK-2026-1001", orderDate: "2026-10-24", bookedBy: "Senthil", outlet: "Kodambakkam", custName: "Meenakshi Sundaram", custMobile: "9840123456", reqDate: "2026-10-28", reqTime: "10:00", delivMode: "Store Pickup", items: [{desc:"Mysore Pak", pack:"1kg", qty:10, rate:700, amount:7000}], grandTotal: 7000, advance: 3000, balance: 4000, posBillNo: "PET-991", posBillAmount: 7000, posStatus: "Matched" }
+        ];
+        let currentUser = null;
+
+        // FORCE LOGIN MODAL ON START
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        });
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const uId = document.getElementById('loginUserId').value.trim();
+            const uPin = document.getElementById('loginPin').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            const matched = systemUsers.find(u => u.id.toLowerCase() === uId.toLowerCase() && u.pin === uPin && u.active);
+
+            if (matched) {
+                currentUser = matched;
+                errorDiv.classList.add('hidden');
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                initAppView();
+            } else {
+                errorDiv.innerText = "Invalid Login ID or PIN. Try admin01 / admin123";
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        function initAppView() {
+            document.getElementById('activeUserName').innerText = currentUser.name;
+            document.getElementById('activeUserBranch').innerText = `${currentUser.role} | ${currentUser.branch}`;
+            document.getElementById('formBookedBy').value = currentUser.name;
+            document.getElementById('formOrderDate').value = new Date().toISOString().split('T')[0];
+
+            document.getElementById('tabBtn-adminPanel').classList.toggle('hidden', currentUser.role !== 'Admin');
+            document.getElementById('financialSummarySection').classList.toggle('hidden', !currentUser.canViewTotals);
+
+            const branchFilter = document.getElementById('branchFilter');
+            if (currentUser.branch !== 'All') {
+                branchFilter.value = currentUser.branch;
+                branchFilter.disabled = true;
+            } else {
+                branchFilter.disabled = false;
+            }
+
+            switchTab('orders');
+            renderOrdersTable();
+            renderPOSReconTable();
+            renderStaffUsersTable();
+            updateDashboardStats();
+            
+            if(document.getElementById('orderItemsTableBody').children.length === 0) {
+                addOrderItemRow();
+            }
+        }
+
+        function switchTab(tabKey) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('bg-kjk-maroon', 'text-kjk-gold', 'border-t-2', 'border-kjk-gold'));
+            document.getElementById(`view-${tabKey}`).classList.remove('hidden');
+            document.getElementById(`tabBtn-${tabKey}`).classList.add('bg-kjk-maroon', 'text-kjk-gold', 'border-t-2', 'border-kjk-gold');
+        }
+
+        function renderOrdersTable() {
+            const tbody = document.getElementById('ordersTableBody');
+            tbody.innerHTML = '';
+            const search = document.getElementById('orderSearchInput').value.toLowerCase();
+            const branch = document.getElementById('branchFilter').value;
+            const mode = document.getElementById('modeFilter').value;
+
+            const filtered = systemOrders.filter(o => {
+                const bMatch = (branch === 'ALL' || o.outlet === branch);
+                const mMatch = (mode === 'ALL' || o.delivMode === mode);
+                const sMatch = o.custName.toLowerCase().includes(search) || o.orderNo.toLowerCase().includes(search);
+                const allowed = (currentUser.branch === 'All' || o.outlet === currentUser.branch);
+                return bMatch && mMatch && sMatch && allowed;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No orders found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b";
+                tr.innerHTML = `
+                    <td class="p-3"><div class="font-bold text-kjk-maroon">${o.orderNo}</div><div class="text-[10px] text-slate-400">${o.orderDate}</div></td>
+                    <td class="p-3"><div class="font-semibold">${o.custName}</div><div class="text-[10px] text-slate-500">${o.custMobile}</div></td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px]">${o.outlet}</span><div class="text-[10px] text-slate-500">${o.delivMode}</div></td>
+                    <td class="p-3"><div>${o.reqDate}</div><div class="text-[10px] text-slate-400">${o.reqTime}</div></td>
+                    <td class="p-3"><div>${o.items.length} Items</div></td>
+                    <td class="p-3 text-right">${currentUser.canViewTotals ? `<div class="font-bold">₹${o.grandTotal.toLocaleString()}</div><div class="text-[10px] text-emerald-600">Adv: ₹${o.advance}</div><div class="text-[10px] text-red-600">Bal: ₹${o.balance}</div>` : `<span class="bg-slate-200 text-slate-400 px-2 py-0.5 rounded text-[10px]">Restricted</span>`}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 text-[10px] font-bold rounded ${o.posStatus === 'Matched' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${o.posStatus}</span></td>
+                    <td class="p-3 text-center"><button onclick="printOrderSlip('${o.orderNo}')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded"><i class="fa-solid fa-print"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateDashboardStats() {
+            if(!currentUser.canViewTotals) return;
+            const list = systemOrders.filter(o => currentUser.branch === 'All' || o.outlet === currentUser.branch);
+            document.getElementById('statTotalSales').innerText = `₹${list.reduce((a,c)=>a+c.grandTotal,0).toLocaleString()}`;
+            document.getElementById('statTotalAdvance').innerText = `₹${list.reduce((a,c)=>a+c.advance,0).toLocaleString()}`;
+            document.getElementById('statTotalBalance').innerText = `₹${list.reduce((a,c)=>a+c.balance,0).toLocaleString()}`;
+            document.getElementById('statTotalOrders').innerText = list.length;
+        }
+
+        function addOrderItemRow() {
+            const tbody = document.getElementById('orderItemsTableBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-2"><input type="text" class="item-desc w-full p-1 border rounded text-xs" placeholder="Item name" required></td>
+                <td class="p-2"><input type="text" class="item-pack w-full p-1 border rounded text-xs" placeholder="Pack"></td>
+                <td class="p-2"><input type="number" oninput="calcRow(this)" class="item-qty w-full p-1 border rounded text-xs text-center" value="1" min="1" required></td>
+                <td class="p-2"><input type="number" oninput="calcRow(this)" class="item-rate w-full p-1 border rounded text-xs text-right" value="0" min="0" required></td>
+                <td class="p-2"><input type="number" readonly class="item-amount w-full p-1 border rounded text-xs text-right bg-slate-50 font-semibold" value="0"></td>
+                <td class="p-2"><input type="text" class="item-notes w-full p-1 border rounded text-xs" placeholder="Notes"></td>
+                <td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove(); calcTotals();" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function calcRow(el) {
+            const r = el.closest('tr');
+            r.querySelector('.item-amount').value = (parseFloat(r.querySelector('.item-qty').value)||0) * (parseFloat(r.querySelector('.item-rate').value)||0);
+            calcTotals();
+        }
+
+        function calcTotals() {
+            let sub = 0;
+            document.querySelectorAll('.item-amount').forEach(i => sub += parseFloat(i.value)||0);
+            document.getElementById('calcSubTotal').value = sub;
+            const gt = sub - (parseFloat(document.getElementById('calcDiscount').value)||0) + (parseFloat(document.getElementById('calcDelivery').value)||0);
+            document.getElementById('calcGrandTotal').value = gt;
+            document.getElementById('calcBalance').value = gt - (parseFloat(document.getElementById('calcAdvance').value)||0);
+        }
+
+        function handleSaveOrder(e) {
+            e.preventDefault();
+            const items = [];
+            document.querySelectorAll('#orderItemsTableBody tr').forEach(r => {
+                items.push({
+                    desc: r.querySelector('.item-desc').value,
+                    pack: r.querySelector('.item-pack').value,
+                    qty: parseFloat(r.querySelector('.item-qty').value)||0,
+                    rate: parseFloat(r.querySelector('.item-rate').value)||0,
+                    amount: parseFloat(r.querySelector('.item-amount').value)||0,
+                    notes: r.querySelector('.item-notes').value
+                });
+            });
+
+            const newOrd = {
+                orderNo: `KJK-2026-${1000 + systemOrders.length + 1}`,
+                orderDate: document.getElementById('formOrderDate').value,
+                bookedBy: currentUser.name,
+                outlet: document.getElementById('formOutlet').value,
+                custName: document.getElementById('formCustName').value,
+                custMobile: document.getElementById('formCustMobile').value,
+                reqDate: document.getElementById('formReqDate').value,
+                reqTime: document.getElementById('formReqTime').value,
+                delivMode: document.getElementById('formDelivMode').value,
+                items: items,
+                grandTotal: parseFloat(document.getElementById('calcGrandTotal').value)||0,
+                advance: parseFloat(document.getElementById('calcAdvance').value)||0,
+                balance: parseFloat(document.getElementById('calcBalance').value)||0,
+                posBillNo: "Pending",
+                posBillAmount: 0,
+                posStatus: "Pending"
+            };
+
+            systemOrders.unshift(newOrd);
+            localStorage.setItem('kjk_orders', JSON.stringify(systemOrders));
+            alert(`Order ${newOrd.orderNo} Saved!`);
+            document.getElementById('orderEntryForm').reset();
+            document.getElementById('orderItemsTableBody').innerHTML = '';
+            addOrderItemRow();
+            switchTab('orders');
+            renderOrdersTable();
+            updateDashboardStats();
+        }
+
+        function renderPOSReconTable() {
+            const tbody = document.getElementById('posReconTableBody');
+            tbody.innerHTML = '';
+            systemOrders.forEach(o => {
+                tbody.innerHTML += `
+                    <tr class="border-b"><td class="p-3 font-bold">${o.orderNo}</td><td class="p-3">${o.custName}</td><td class="p-3">₹${o.grandTotal}</td><td class="p-3"><input type="text" value="${o.posBillNo}" onchange="updatePOS('${o.orderNo}',this.value)" class="p-1 border rounded w-24 text-xs"></td><td class="p-3">₹${o.posBillAmount}</td><td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.posStatus==='Matched'?'bg-emerald-100 text-emerald-700':'bg-amber-100'}">${o.posStatus}</span></td></tr>
+                `;
+            });
+        }
+
+        function updatePOS(no, val) {
+            const o = systemOrders.find(x => x.orderNo === no);
+            if(o) { o.posBillNo = val; o.posBillAmount = o.grandTotal; o.posStatus = 'Matched'; localStorage.setItem('kjk_orders', JSON.stringify(systemOrders)); renderPOSReconTable(); }
+        }
+
+        function renderStaffUsersTable() {
+            const tbody = document.getElementById('staffUsersTableBody');
+            tbody.innerHTML = '';
+            systemUsers.forEach(u => {
+                tbody.innerHTML += `<tr class="border-b"><td class="p-3 font-bold">${u.name}</td><td class="p-3">${u.id}</td><td class="p-3">${u.role}</td><td class="p-3">${u.branch}</td><td class="p-3">${u.id!=='admin01'?`<button onclick="delUser('${u.id}')" class="text-red-600">Remove</button>`:'System'}</td></tr>`;
+            });
+        }
+
+        function openAddUserModal() { document.getElementById('addUserModal').classList.remove('hidden'); }
+        function closeAddUserModal() { document.getElementById('addUserModal').classList.add('hidden'); }
+        function handleSaveUser(e) {
+            e.preventDefault();
+            systemUsers.push({
+                id: document.getElementById('newUserId').value.trim(),
+                name: document.getElementById('newUserName').value.trim(),
+                pin: document.getElementById('newUserPin').value.trim(),
+                role: document.getElementById('newUserRole').value,
+                branch: document.getElementById('newUserBranch').value,
+                canViewTotals: document.getElementById('newUserCanViewTotals').checked,
+                active: true
+            });
+            localStorage.setItem('kjk_users', JSON.stringify(systemUsers));
+            closeAddUserModal();
+            renderStaffUsersTable();
+            alert('User Created!');
+        }
+        function delUser(id) {
+            systemUsers = systemUsers.filter(u => u.id !== id);
+            localStorage.setItem('kjk_users', JSON.stringify(systemUsers));
+            renderStaffUsersTable();
+        }
+
+        function printOrderSlip(no) {
+            const o = systemOrders.find(x => x.orderNo === no);
+            if(!o) return;
+            const slip = document.getElementById('printableSlip');
+            slip.innerHTML = `<div style="padding:20px; font-family:sans-serif;"><h2 style="text-align:center; color:#800020;">KRISHNAA JELABI KADAI</h2><p><b>Order:</b> ${o.orderNo} | <b>Customer:</b> ${o.custName} (${o.custMobile})</p><p><b>Outlet:</b> ${o.outlet} | <b>Mode:</b> ${o.delivMode}</p><hr/><p><b>Grand Total:</b> ₹${o.grandTotal} | <b>Advance:</b> ₹${o.advance} | <b>Balance:</b> ₹${o.balance}</p></div>`;
+            window.print();
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krishnaa Jelabi Kadai - Diwali Order Taking System</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
